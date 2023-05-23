@@ -4,6 +4,7 @@ import sqlite3
 from vk_api.longpoll import VkLongPoll, VkEventType
 
 # <Имя бота> сохрани фразу <фраза>
+# <Имя бота> напиши фразу
 class VKBot:
 	def __init__(self, bot_name, api_token):
 		self.session = vk_api.VkApi(token=api_token)
@@ -29,7 +30,16 @@ class VKBot:
 					if len(command_words) > 3 and command_words[1] == "сохрани" and command_words[2] == "фразу":
 						phrase = event.text[15 + len(self.bot_name):]
 						self.conn.execute(f'INSERT OR REPLACE INTO user_info(vk_id, sentence) VALUES ({event.user_id}, "{phrase}")')
-						print(self.conn.execute("SELECT * FROM user_info").fetchall())
+						self.conn.commit()
+						self.send_message(f'Фраза "{phrase}" успешно сохранена!', event.user_id)
+					if len(command_words) > 2 and command_words[1] == "напиши" and command_words[2] == "фразу":
+						answer = self.conn.execute(f"SELECT sentence FROM user_info WHERE vk_id = {event.user_id}").fetchall()
+						if len(answer) > 0:
+							answer = answer[0][0]
+							self.send_message(f'Да, конечно! Вот ваша фраза: "{answer}"', event.user_id)
+						else:
+							self.send_message('Ошибка: вы не сохраняли никакую фразу', event.user_id)
+
 
 
 
